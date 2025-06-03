@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plataforma de Ingeniería Biomédica</title>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .filters {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .filters select, .filters input[type="text"] {
+      padding: 10px;
+      font-size: 14px;
+      margin: 5px;
+    }
+    .comparison {
+      margin-top: 30px;
+      border-top: 2px solid #ccc;
+      padding-top: 20px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Plataforma de Ingeniería Biomédica</h1>
+  <div class="filters">
+    <input type="text" id="searchInput" placeholder="Buscar equipo clínico o patrón...">
+    <select id="categoryFilter">
+      <option value="">Todas las categorías</option>
+      <option value="Cardiología">Cardiología</option>
+      <option value="Radiología">Radiología</option>
+      <option value="Terapia Respiratoria">Terapia Respiratoria</option>
+      <option value="Farmacia">Farmacia</option>
+      <option value="Laboratorio">Laboratorio</option>
+    </select>
+  </div>
+  <table id="equiposTable" class="display" style="width:100%">
+    <thead>
+      <tr>
+        <th>Seleccionar</th>
+        <th>Equipo Clínico</th>
+        <th>Equipo Patrón</th>
+        <th>Marca</th>
+        <th>Modelo</th>
+        <th>Alcance</th>
+        <th>Características</th>
+        <th>Precio</th>
+        <th>Compatibilidad</th>
+        <th>Categoría</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div class="comparison" id="comparisonContainer">
+    <h2>Comparativa de Equipos</h2>
+    <div id="comparisonContent"></div>
+  </div>
+  <div id="infoModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="document.getElementById('infoModal').style.display='none'">&times;</span>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script>
+    const data = [
+      { equipoClinico: "Monitor de signos vitales", equipoPatron: "Fluke ProSim 8", marca: "Fluke", modelo: "ProSim 8", alcance: "ECG, NIBP, IBP, temperatura, respiración, SpO2", caracteristicas: "Pantalla táctil, simulación fisiológica, compatible con Masimo/Nellcor", precio: "$11,869 USD", compatibilidad: "Philips, GE, Dräger, Nihon Kohden", categoria: "Cardiología" },
+      { equipoClinico: "Desfibrilador", equipoPatron: "Impulse 7000DP", marca: "Fluke", modelo: "Impulse 7000DP", alcance: "Energía, ECG, marcapasos", caracteristicas: "Analizador bifásico/monofásico, ECG 12 derivaciones", precio: "$9,500 USD", compatibilidad: "Zoll, Physio, Nihon-Kohden", categoria: "Cardiología" },
+      { equipoClinico: "ECG", equipoPatron: "ProSim 4", marca: "Fluke", modelo: "ProSim 4", alcance: "ECG, NIBP", caracteristicas: "Portátil, simulador básico, pantalla LED", precio: "$4,200 USD", compatibilidad: "Cualquier ECG", categoria: "Cardiología" },
+      { equipoClinico: "Marcapasos", equipoPatron: "Pacemaker Tester", marca: "Fluke", modelo: "Pacemaker PT1000", alcance: "Frecuencia, amplitud, ancho de pulso", caracteristicas: "Simulación precisa, sincronización con ECG", precio: "$3,000 USD", compatibilidad: "Todos los fabricantes", categoria: "Cardiología" },
+      { equipoClinico: "Monitor fetal", equipoPatron: "PS420", marca: "Fluke", modelo: "PS420", alcance: "ECG fetal y uterino", caracteristicas: "Compacto, preprogramado, carga USB", precio: "$4,500 USD", compatibilidad: "Philips, GE", categoria: "Cardiología" },
+      { equipoClinico: "Rayos X", equipoPatron: "Accu-Gold", marca: "Radcal", modelo: "Accu-Gold+ Touch", alcance: "kV, mA, tiempo, dosis", caracteristicas: "Pantalla táctil, alta precisión, multicanal", precio: "$10,000 USD", compatibilidad: "GE, Siemens, Philips", categoria: "Radiología" },
+      { equipoClinico: "Mamógrafo", equipoPatron: "Model 011", marca: "CIRS", modelo: "011 ACR Phantom", alcance: "Resolución, contraste", caracteristicas: "Tejido equivalente, aprobado por ACR", precio: "$3,000 USD", compatibilidad: "FDA compliant", categoria: "Radiología" },
+      { equipoClinico: "Ultrasonido", equipoPatron: "Model 040GSE", marca: "CIRS", modelo: "040GSE", alcance: "Resolución axial/lateral", caracteristicas: "Multiblanco, tejido simulado", precio: "$2,500 USD", compatibilidad: "Mindray, Samsung", categoria: "Radiología" },
+      { equipoClinico: "Negatoscopio", equipoPatron: "Fluke 941", marca: "Fluke", modelo: "941", alcance: "0–200,000 lux", caracteristicas: "Portátil, ±5% precisión", precio: "$400 USD", compatibilidad: "General", categoria: "Radiología" },
+      { equipoClinico: "Cuarto oscuro", equipoPatron: "Fluke 943", marca: "Fluke", modelo: "943", alcance: "Luz ambiente, seguridad", caracteristicas: "Multiespectro, compacto", precio: "$700 USD", compatibilidad: "Negatoscopios y LED", categoria: "Radiología" },
+      { equipoClinico: "Ventilador mecánico", equipoPatron: "Fluke VT900A", marca: "Fluke", modelo: "VT900A", alcance: "Flujo ±300 L/min, presión, O2", caracteristicas: "Pantalla táctil, calibrado", precio: "$10,619 USD", compatibilidad: "GE, Dräger", categoria: "Terapia Respiratoria" },
+      { equipoClinico: "CPAP/BIPAP", equipoPatron: "Fluke VT650", marca: "Fluke", modelo: "VT650", alcance: "Presión y flujo bajo", caracteristicas: "Preciso, pantalla a color", precio: "$9,000 USD", compatibilidad: "ResMed, Philips", categoria: "Terapia Respiratoria" },
+      { equipoClinico: "Aspirador", equipoPatron: "Dwyer DPG2000", marca: "Dwyer", modelo: "DPG2000", alcance: "0–100 kPa", caracteristicas: "Vacuum digital, LCD", precio: "$800 USD", compatibilidad: "General", categoria: "Terapia Respiratoria" },
+      { equipoClinico: "Analizador de mezcla O2", equipoPatron: "MaxO2+A", marca: "Maxtec", modelo: "MaxO2+A", alcance: "O2 0–100%", caracteristicas: "Sensor galvánico, autocero", precio: "$500 USD", compatibilidad: "Cualquier fuente", categoria: "Terapia Respiratoria" },
+      { equipoClinico: "Bomba de infusión", equipoPatron: "Fluke IDA-5", marca: "Fluke", modelo: "IDA-5", alcance: "0–1500 ml/h, presión", caracteristicas: "Multicanal, software Ansur", precio: "$12,000 USD", compatibilidad: "B. Braun, Alaris", categoria: "Farmacia" },
+      { equipoClinico: "Perfusora", equipoPatron: "Fluke IDA-1S", marca: "Fluke", modelo: "IDA-1S", alcance: "Canal único", caracteristicas: "Portátil, USB", precio: "$3,500 USD", compatibilidad: "General", categoria: "Farmacia" },
+      { equipoClinico: "Refrigerador clínico", equipoPatron: "Testo 174T", marca: "Testo", modelo: "174T", alcance: "-30°C a 70°C", caracteristicas: "Datalogger, USB", precio: "$200 USD", compatibilidad: "Farmacia y laboratorios", categoria: "Farmacia" },
+      { equipoClinico: "Centrífuga", equipoPatron: "Extech 461920", marca: "Extech", modelo: "461920", alcance: "100–100,000 RPM", caracteristicas: "Tacómetro óptico", precio: "$250 USD", compatibilidad: "General", categoria: "Laboratorio" },
+      { equipoClinico: "Balanza", equipoPatron: "Troemner F1", marca: "Troemner", modelo: "F1", alcance: "1g–1kg", caracteristicas: "Pesas calibradas", precio: "$800 USD", compatibilidad: "Balanza analítica", categoria: "Laboratorio" },
+      { equipoClinico: "pHímetro", equipoPatron: "Hanna HI7004L", marca: "Hanna", modelo: "HI7004L", alcance: "pH 4.01 ±0.02", caracteristicas: "Buffer NIST", precio: "$35 USD", compatibilidad: "General", categoria: "Laboratorio" }
+    ];
+
+    $(document).ready(function() {
+      const table = $('#equiposTable').DataTable({
+        data: data,
+        columns: [
+          {
+            data: null,
+            render: function(data, type, row) {
+              return `<input type="checkbox" onchange="compareEquipos(this, '${row.modelo}')">`;
+            }
+          },
+          { data: 'equipoClinico' },
+          { data: 'equipoPatron' },
+          { data: 'marca' },
+          { data: 'modelo' },
+          { data: 'alcance' },
+          { data: 'caracteristicas' },
+          { data: 'precio' },
+          { data: 'compatibilidad' },
+          { data: 'categoria' }
+        ]
+      });
+      $('#searchInput').on('keyup', function() {
+        table.search(this.value).draw();
+      });
+      $('#categoryFilter').on('change', function() {
+        table.column(9).search(this.value).draw();
+      });
+    });
+
+    const selectedEquipos = {};
+
+    function compareEquipos(checkbox, modelo) {
+      const equipo = data.find(item => item.modelo === modelo);
+      if (checkbox.checked) {
+        selectedEquipos[modelo] = equipo;
+      } else {
+        delete selectedEquipos[modelo];
+      }
+      const container = document.getElementById('comparisonContent');
+      container.innerHTML = '';
+      Object.values(selectedEquipos).forEach(eq => {
+        const card = `
+          <div style="border:1px solid #ccc;padding:10px;margin:5px;display:inline-block;width:45%;vertical-align:top;">
+            <h3>${eq.equipoPatron} (${eq.modelo})</h3>
+            <p><strong>Marca:</strong> ${eq.marca}</p>
+            <p><strong>Alcance:</strong> ${eq.alcance}</p>
+            <p><strong>Características:</strong> ${eq.caracteristicas}</p>
+            <p><strong>Precio:</strong> ${eq.precio}</p>
+            <p><strong>Compatibilidad:</strong> ${eq.compatibilidad}</p>
+            <p><strong>Categoría:</strong> ${eq.categoria}</p>
+          </div>`;
+        container.innerHTML += card;
+      });
+    }
+  </script>
+</body>
+</html>
